@@ -17,6 +17,8 @@ public class VideoCallServer {
     public static Queue<SSLSocket> colaEspera = new LinkedList<>();
     private static final int MAX_CONEXIONES = 6;
     private static int puertoServidor = 5000;
+    public static List<SSLSocket> clientesConectados = new ArrayList<>();
+
 
     public static void main(String[] args) {
         try {
@@ -27,6 +29,7 @@ public class VideoCallServer {
                 SSLSocket clienteSocket = (SSLSocket) servidorSSL.accept();
                 if (IPsconectadas.size() < MAX_CONEXIONES) {
                     IPsconectadas.add(clienteSocket.getInetAddress().toString());
+                    clientesConectados.add(clienteSocket);
                     Thread clientHandlerThread = new Thread(new ClientVideoCallThread(clienteSocket));
                     clientHandlerThread.start();
                 } else {
@@ -39,4 +42,5 @@ public class VideoCallServer {
             e.printStackTrace();
         }
     }
+
 }

@@ -9,7 +9,7 @@ import java.util.Queue;
 
 
 public class VideoCallServer {
-
+	
     private static SSLServerSocketFactory sfact;
     private static SSLServerSocket servidorSSL;
     private static boolean encendido = true;
@@ -21,7 +21,12 @@ public class VideoCallServer {
 
 
     public static void main(String[] args) {
+
         try {
+        	
+        	System.setProperty("javax.net.ssl.keyStore", "AlmacenSSL");
+        	System.setProperty("javax.net.ssl.keyStorePassword", "1234567");
+
             sfact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             servidorSSL = (SSLServerSocket) sfact.createServerSocket(puertoServidor);
 

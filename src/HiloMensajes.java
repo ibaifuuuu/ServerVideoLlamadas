@@ -1,5 +1,6 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -17,6 +18,7 @@ class HiloMensajes implements Runnable {
     private OutputStream outputStream;
 
     public HiloMensajes(SSLSocket clientSocket) {
+    	
         this.clientSocket = clientSocket;
         try {
             this.inputStream = clientSocket.getInputStream();
@@ -28,30 +30,44 @@ class HiloMensajes implements Runnable {
 
     @Override
     public void run() {
-    	try {
-    	        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+        try {
+            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
 
-    	        // Assuming you are receiving a HashMap<String, String>, adjust accordingly
-    	        HashMap<String, String> receivedHashMap = (HashMap<String, String>) objectInputStream.readObject();
+            // Assuming you are receiving a HashMap<String, String>, adjust accordingly
+            HashMap<String, String> receivedHashMap = (HashMap<String, String>) objectInputStream.readObject();
 
-    	        // Now you have the received HashMap, you can use it as needed
-    	        // For example, print the received data
-    	        System.out.println("Received HashMap: " + receivedHashMap);
+            // Now you have the received HashMap, you can use it as needed
+            // For example, print the received data
+            System.out.println("Received HashMap: " + receivedHashMap);
 
-    	        // Iterate through the HashMap and send each key-value pair to ConectorAPIBBDD.postAPI
-    	        for (Map.Entry<String, String> entry : receivedHashMap.entrySet()) {
-    	            String key = entry.getKey();
-    	            String value = entry.getValue();
+            // Iterate through the HashMap and print each key-value pair
+            String url = null;
+            String json = null;
 
-    	            // Send key and value to ConectorAPIBBDD.postAPI
-    	            ConectorAPIBBDD.postAPI(key, value);
-    	        }
-    	        // Close the input stream and socket when done
-    	        objectInputStream.close();
-    	        clientSocket.close();
-    	     }catch (Exception e) {
-				e.printStackTrace();
-			}
+            // Iterate through the HashMap and print each key-value pair
+            for (Map.Entry<String, String> entry : receivedHashMap.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if ("url".equals(key)) {
+                    url = value;
+                } else if ("json".equals(key)) {
+                    json = value;
+                }
+            }
+            System.out.print("El servidor escucha el mensaje del cliente" + json);
+            
+            ConectorAPIBBDD.postAPI(url, json);
+            System.out.print("El mensaje es enviado a la bbdd");
+
+            objectInputStream.close();
+            clientSocket.close();
+            System.out.print("El cliente salio");
+ 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+   
+
 }
 

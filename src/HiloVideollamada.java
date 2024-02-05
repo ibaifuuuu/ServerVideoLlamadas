@@ -41,10 +41,10 @@ class HiloVideollamada implements Runnable {
                 clientSocket.close();
 
                 // Si hay alguien en la cola de espera, lo iniciamos y lo eliminamos de la cola
-                if (!ServerVideoLlamada.colaEsperaVideollamada.isEmpty()) {
-                    SSLSocket siguienteCliente = ServerVideoLlamada.colaEsperaVideollamada.poll();
+                if (!ServerBarManolo.colaEsperaVideollamada.isEmpty()) {
+                    SSLSocket siguienteCliente = ServerBarManolo.colaEsperaVideollamada.poll();
                     Thread clientHandlerThread = new Thread(new HiloVideollamada(siguienteCliente));
-                    ServerVideoLlamada.colaEsperaVideollamada.remove(siguienteCliente);
+                    ServerBarManolo.colaEsperaVideollamada.remove(siguienteCliente);
                     clientHandlerThread.start();
                 }
             } catch (Exception e) {
@@ -55,7 +55,7 @@ class HiloVideollamada implements Runnable {
 
     private void broadcastBytes(byte[] buffer, int bytesRead) {
         // Enviar bytes a todos los clientes conectados, excepto al remitente
-        List<SSLSocket> clientesConectados = new ArrayList<>(ServerVideoLlamada.clientesConectadosVideollamada );
+        List<SSLSocket> clientesConectados = new ArrayList<>(ServerBarManolo.clientesConectadosVideollamada );
         clientesConectados.remove(clientSocket);
 
         for (SSLSocket cliente : clientesConectados) {

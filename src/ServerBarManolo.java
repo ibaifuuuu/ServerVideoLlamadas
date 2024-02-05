@@ -54,8 +54,6 @@ public class ServerBarManolo {
     
     private static void iniciarServidorVideollamada() {
         try {
-
-
             serverFactoryVideollamada = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             servidorSSLVideoLlamada = (SSLServerSocket) serverFactoryVideollamada.createServerSocket(puertoServidorVideollamadas);
 
@@ -89,8 +87,8 @@ public class ServerBarManolo {
             while (encendido) {
                 SSLSocket clienteSocket = (SSLSocket) servidorSSLMensaje.accept();
                 System.out.println("cliente en cola a mensaje");
-                Thread clientHandlerThread = new Thread(new HiloVideollamada(clienteSocket));
-
+                Thread clientHandlerThread = new Thread(new HiloMensajes(clienteSocket));
+                clientHandlerThread.start();
             }
 
         } catch (Exception e) {

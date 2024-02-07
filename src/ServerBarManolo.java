@@ -2,9 +2,15 @@
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 
@@ -29,6 +35,9 @@ public class ServerBarManolo {
     private static SSLServerSocketFactory serverFactoryMensaje;
     private static int puertoServidorMensajes = 5003;
 
+	private static SSLSocket clienteSocketActual;
+	private static InputStream inputStream;
+	private static List<ObjectOutputStream> output = new ArrayList<ObjectOutputStream>();
     
 	//----------------------------------------------------------------------------------------------------------------
 
@@ -39,9 +48,6 @@ public class ServerBarManolo {
         	
         	System.setProperty("javax.net.ssl.keyStore", "AlmacenSSL");
         	System.setProperty("javax.net.ssl.keyStorePassword", "1234567");
-           
-            Thread videollamadaThread = new Thread(() -> iniciarServidorVideollamada());
-            videollamadaThread.start();
                 
             Thread mensajesThread = new Thread(() -> iniciarServidorMensajes());
             mensajesThread.start();
@@ -51,45 +57,58 @@ public class ServerBarManolo {
             e.printStackTrace();
         }
     }
-    
-    private static void iniciarServidorVideollamada() {
-        try {
-            serverFactoryVideollamada = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-            servidorSSLVideoLlamada = (SSLServerSocket) serverFactoryVideollamada.createServerSocket(puertoServidorVideollamadas);
 
-            while (encendido) {
-                SSLSocket clienteSocket = (SSLSocket) servidorSSLVideoLlamada.accept();
-                System.out.println("cliente en cola a videollamada");
-                if (IPsconectadasVideollamada.size() < MAX_CONEXIONES_VIDEOLLAMADA) {
-                    IPsconectadasVideollamada.add(clienteSocket.getInetAddress().toString());
-                    clientesConectadosVideollamada.add(clienteSocket);
-                    Thread clientHandlerThread = new Thread(new HiloVideollamada(clienteSocket));
-                    clientHandlerThread.start();
-                    System.out.println("cliente en videollamada");
-
-                } else {
-                    System.out.println("Límite de personas conectadas, " + colaEsperaVideollamada.size() + "personas en espera");
-                    colaEsperaVideollamada.add(clienteSocket);
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private static void iniciarServidorMensajes() {
+    	
         try {
           
             serverFactoryMensaje = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             servidorSSLMensaje = (SSLServerSocket) serverFactoryMensaje.createServerSocket(puertoServidorMensajes);
 
             while (encendido) {
-                SSLSocket clienteSocket = (SSLSocket) servidorSSLMensaje.accept();
-                System.out.println("cliente en cola a mensaje");
-                Thread clientHandlerThread = new Thread(new HiloMensajes(clienteSocket));
-                clientHandlerThread.start();
-            }
+            	
+                clienteSocketActual = (SSLSocket) servidorSSLMensaje.accept();
+        		
+        		try {
+        			
+        			ObjectInputStream objectInputStream = new ObjectInputStream(clienteSocketActual.getInputStream());
+        			output.add(new ObjectOutputStream(clienteSocketActual.getOutputStream()));
+        			HashMap<String, String> receivedHashMap = (HashMap<String, String>) objectInputStream.readObject();
+        			String url = null;
+        			String json = null;
+        			
+        			for (Map.Entry<String, String> entry : receivedHashMap.entrySet()) {
+        				
+        				String key = entry.getKey();
+        				String value = entry.getValue();
+        				
+        				if ("url".equals(key)) {
+        					url = value;
+        				} 
+        				else if ("json".equals(key)) {
+        					
+        					json = value;
+        					
+        				}
+        			}
+
+        			System.out.println("El servidor escucha el mensaje del cliente: " + json);
+
+        			ConectorAPIBBDD.postAPI(url, json);
+        			
+        			for (ObjectOutputStream ou : output) {
+        				ou.writeObject("recargar");
+        			}
+                    
+        			System.out.println("El mensaje es enviado a la bbdd");
+
+        		} catch (Exception e) {
+        			e.printStackTrace();
+        		}
+        		
+        	}
+               
 
         } catch (Exception e) {
             e.printStackTrace();
